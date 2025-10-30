@@ -1,6 +1,12 @@
 # =========================================================
-# modules.py — ConvNeXt Model Setup (v3.2)
+# modules.py — ConvNeXt Model Setup (v3.3)
 # =========================================================
+"""
+Author: Darshan Shaji (s4913705)
+Course: COMP3710 - Pattern Analysis
+University of Queensland, 2025
+"""
+
 import torch
 import torch.nn as nn
 import timm
