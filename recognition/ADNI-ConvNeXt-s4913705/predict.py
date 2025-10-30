@@ -1,9 +1,16 @@
 # =========================================================
-# predict.py — Evaluation (v3.2)
+# predict.py — Evaluation (v3.3)
 # =========================================================
+"""
+Author: Darshan Shaji (s4913705)
+Course: COMP3710 - Pattern Analysis
+University of Queensland, 2025
+"""
+
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from dataset import get_dataloaders
 from modules import ConvNeXtADNI
 
@@ -17,12 +24,15 @@ def evaluate_model(weights_path, train_dir, test_dir, device="cuda"):
 
     correct, total = 0, 0
     per_class = torch.zeros(len(classes), 2)
+    all_preds, all_labels = [], []
 
     with torch.no_grad():
         for imgs, labels in tqdm(test_loader, desc="🔍 Evaluating"):
             imgs, labels = imgs.to(device), labels.to(device)
             outputs = model(imgs)
             _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
             for label, pred in zip(labels, preds):
                 per_class[label][1] += 1
                 if label == pred:
@@ -38,20 +48,16 @@ def evaluate_model(weights_path, train_dir, test_dir, device="cuda"):
             acc = 100 * per_class[i][0] / per_class[i][1]
             print(f"   • {cls:<10}: {acc:.2f}%")
 
-    # --- Sample visualization ---
-    batch = next(iter(test_loader))
-    imgs, labels = batch
-    fig, axes = plt.subplots(1, 4, figsize=(10, 3))
-    for i in range(4):
-        axes[i].imshow(imgs[i].permute(1, 2, 0))
-        axes[i].set_title(f"True: {classes[labels[i]]}")
-        axes[i].axis('off')
-    plt.suptitle("Example Predictions (Unnormalized)")
+    # Confusion matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
+    disp.plot(cmap='Purples', values_format='d')
+    plt.title("Confusion Matrix — ADNI ConvNeXt (v3.3)")
     plt.show()
 
 if __name__ == "__main__":
     evaluate_model(
-        weights_path="/content/drive/MyDrive/best_convnext_adni_v3_2.pth",
+        weights_path="/content/drive/MyDrive/best_convnext_adni_v3_3.pth",
         train_dir="/content/drive/MyDrive/ADNI/AD_NC/train",
         test_dir="/content/drive/MyDrive/ADNI/AD_NC/test"
     )
