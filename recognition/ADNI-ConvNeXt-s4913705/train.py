@@ -1,6 +1,12 @@
 # =========================================================
-# train.py — Training Loop (v3.2)
+# train.py — Training Loop (v3.3)
 # =========================================================
+"""
+Author: Darshan Shaji (s4913705)
+Course: COMP3710 - Pattern Analysis
+University of Queensland, 2025
+"""
+
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -11,6 +17,7 @@ def train_model(train_dir, test_dir, save_path, device="cuda", epochs=25, patien
     """Train ConvNeXt ADNI model with accuracy tracking and early stopping."""
     train_loader, test_loader, classes = get_dataloaders(train_dir, test_dir)
     model, criterion, optimizer, scheduler = get_model(device=device)
+    print(f"🚀 Starting training for {epochs} epochs | Initial LR = {optimizer.param_groups[0]['lr']}")
 
     best_val_acc, counter = 0, 0
     train_acc_hist, val_acc_hist = [], []
@@ -34,7 +41,7 @@ def train_model(train_dir, test_dir, save_path, device="cuda", epochs=25, patien
         train_acc = 100 * correct / total
         train_acc_hist.append(train_acc)
 
-        # --- Validation ---
+        # Validation
         model.eval()
         correct, total = 0, 0
         with torch.no_grad():
@@ -47,10 +54,10 @@ def train_model(train_dir, test_dir, save_path, device="cuda", epochs=25, patien
         val_acc = 100 * correct / total
         val_acc_hist.append(val_acc)
 
-        print(f"📈 Epoch {epoch:02d} | Train Acc: {train_acc:.2f}% | Val Acc: {val_acc:.2f}% | Loss: {epoch_loss/len(train_loader):.4f}")
+        print(f"🔹 Epoch {epoch:02d} | Train={train_acc:.2f}% | Val={val_acc:.2f}% | LR={optimizer.param_groups[0]['lr']:.2e}")
         scheduler.step()
 
-        # --- Early stopping ---
+        # Early stopping
         if val_acc > best_val_acc:
             best_val_acc, counter = val_acc, 0
             torch.save(model.state_dict(), save_path)
@@ -59,15 +66,16 @@ def train_model(train_dir, test_dir, save_path, device="cuda", epochs=25, patien
             counter += 1
             if counter >= patience:
                 print("⛔ Early stopping triggered — no improvement.")
+                torch.save(model.state_dict(), save_path.replace(".pth", "_final.pth"))
+                print(f"💾 Final model snapshot saved at {save_path.replace('.pth', '_final.pth')}")
                 break
 
-    # --- Plot accuracy curves ---
     plt.figure(figsize=(6,4))
     plt.plot(train_acc_hist, label="Train Accuracy")
     plt.plot(val_acc_hist, label="Validation Accuracy")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
-    plt.title("ConvNeXt ADNI Training Curve (v3.2)")
+    plt.title("ConvNeXt ADNI Training Curve (v3.3)")
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -78,5 +86,5 @@ if __name__ == "__main__":
     train_model(
         train_dir="/content/drive/MyDrive/ADNI/AD_NC/train",
         test_dir="/content/drive/MyDrive/ADNI/AD_NC/test",
-        save_path="/content/drive/MyDrive/best_convnext_adni_v3_2.pth"
+        save_path="/content/drive/MyDrive/best_convnext_adni_v3_3.pth"
     )
