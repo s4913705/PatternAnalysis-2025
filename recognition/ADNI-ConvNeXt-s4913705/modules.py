@@ -1,5 +1,5 @@
 # =========================================================
-# modules.py — ConvNeXt Model Setup (v3.3)
+# modules.py — ConvNeXt Model Setup (v3.4)
 # =========================================================
 """
 Author: Darshan Shaji (s4913705)
@@ -10,19 +10,19 @@ University of Queensland, 2025
 import torch
 import torch.nn as nn
 import timm
-import numpy as np, random
+import numpy as np, random, time
 
 def set_seed(seed: int = 4913705):
-    """Ensure deterministic results for reproducibility."""
+    """Ensure deterministic results."""
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-    print(f"🧩 Random seed fixed at: {seed}")
+    print(f"🧩 Seed fixed: {seed}")
 
 class ConvNeXtADNI(nn.Module):
-    """ConvNeXt-Tiny model fine-tuned for AD vs NC classification."""
+    """Fine-tuned ConvNeXt-Tiny for binary classification."""
     def __init__(self, num_classes=2, drop_rate=0.3):
         super().__init__()
         self.model = timm.create_model("convnext_tiny", pretrained=True, drop_rate=drop_rate)
@@ -32,12 +32,18 @@ class ConvNeXtADNI(nn.Module):
     def forward(self, x):
         return self.model(x)
 
+def count_parameters(model):
+    total = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"🧠 Total parameters: {total:,} | Trainable: {trainable:,}")
+
 def get_model(device="cuda", lr=3e-5, weight_decay=1e-4):
-    """Return model, criterion, optimizer, and scheduler."""
+    """Return initialized model, optimizer, scheduler."""
     set_seed()
     model = ConvNeXtADNI().to(device)
+    count_parameters(model)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=8)
-    print(f"✅ Model initialized on {device} | Dropout: 0.3 | LR: {lr}")
+    print(f"✅ Model ready on {device} | LR={lr}")
     return model, criterion, optimizer, scheduler
